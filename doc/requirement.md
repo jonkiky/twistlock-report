@@ -25,18 +25,19 @@ The tool must be delivered as a **web application** accessible via a browser. It
 
 The home page must display a single form containing all required input fields. The form layout should be clean and clearly labeled.
 
-| Field | UI Control | Placeholder / Helper Text |
-|---|---|---|
-| Project Name | Text input | e.g., `CRDC CCDI` |
-| TPM | Text input | e.g., `Jane Smith` |
-| Microservice Name | Text input | e.g., `Federation DCC Service` |
-| Image Name | Text input | e.g., `ccdi-federation-dcc` |
-| Image Version / Tag | Text input | e.g., `1.2.0.10` |
-| Twistlock Token | Password input (masked) | `Paste your Bearer token here` |
+| Field | UI Control | Required | Placeholder / Helper Text |
+|---|---|---|---|
+| Project Name | Text input | No | e.g., `CRDC CCDI` |
+| TPM | Text input | No | e.g., `Jane Smith` |
+| Microservice Name | Text input | Yes | e.g., `Federation DCC Service` |
+| Image Name | Text input | Yes | e.g., `ccdi-federation-dcc` |
+| Image Version / Tag | Text input | Yes | e.g., `1.2.0.10` |
+| Twistlock Token | Password input (masked) | Yes | `Paste your Bearer token here` |
 
-- All fields must be marked as required. The form must prevent submission if any field is empty.
+- **Project Name** and **TPM** are optional and may be left blank.
+- All other fields are required. The form must prevent submission if any required field is empty.
 - The Twistlock Token field must mask input (password-style) to prevent shoulder surfing.
-- Inline validation messages should appear on blur (when a user leaves a field blank).
+- Inline validation messages should appear on blur (when a required field is left blank).
 
 ### 3.2 Generate Report Button
 
@@ -67,16 +68,16 @@ The home page must display a single form containing all required input fields. T
 
 > See Section 3.1 for the corresponding UI controls for each field.
 
-The following inputs must be provided before the tool executes. All fields are required.
+The following inputs must be provided before the tool executes. Fields marked **optional** may be left blank.
 
-| Field | Type | Description |
-|---|---|---|
-| Project Name | String | Name of the project that owns the microservice |
-| TPM | String | Full name of the Technical Project Manager |
-| Microservice Name | String | Human-readable name of the microservice (used for display in the report) |
-| Image Name | String | Container image repository name (e.g., `ccdi-federation-dcc`) |
-| Image Version / Tag | String | The specific image tag to scan (e.g., `1.2.0.10`) |
-| Twistlock Token | String | Bearer token for authenticating against the Twistlock API; treated as a secret and never logged or stored |
+| Field | Type | Required | Description |
+|---|---|---|---|
+| Project Name | String | No | Name of the project that owns the microservice |
+| TPM | String | No | Full name of the Technical Project Manager |
+| Microservice Name | String | Yes | Human-readable name of the microservice (used for display in the report) |
+| Image Name | String | Yes | Container image repository name (e.g., `ccdi-federation-dcc`) |
+| Image Version / Tag | String | Yes | The specific image tag to scan (e.g., `1.2.0.10`) |
+| Twistlock Token | String | Yes | Bearer token for authenticating against the Twistlock API; treated as a secret and never logged or stored |
 
 > **Note:** The Report Date is automatically populated with the date the tool is run. It does not need to be entered by the user.
 
@@ -188,9 +189,9 @@ The generated report must populate the following three sections of the report te
 
 Populate one row per entry in the `vulnerabilities` array, sorted by severity (critical → high → medium → low).
 
-| CVE Identifier | Severity | CVSS Score | Package Name | Package Version | Fix Status | Date Identified | Description | Reference |
-|---|---|---|---|---|---|---|---|---|
-| *(from API)* | *(from API)* | *(from API)* | *(from API)* | *(from API)* | *(from API)* | *(from API)* | *(from API)* | *(from API)* |
+| Microservice Name | CVE Identifier | Severity | Date Identified | Jira Ticket |
+|---|---|---|---|---|
+| *(from `imageName`)* | *(from API `.cve`)* | *(from API `.severity`)* | *(from API `.discovered`)* | *(left blank)* |
 
 ---
 
@@ -210,7 +211,7 @@ Populate one row per entry in the `vulnerabilities` array, sorted by severity (c
 
 - [ ] Given valid inputs, the tool successfully calls both APIs and generates a populated report.
 - [ ] The registry hostname is correctly resolved from the Step 1 response and used in Step 2.
-- [ ] All vulnerability fields (CVE, severity, CVSS, package name/version, fix status, date, description, link) are extracted and mapped to the correct report columns.
+- [ ] Vulnerability fields (CVE identifier, severity, date identified) are extracted and mapped to the correct report columns. Microservice Name is populated from the user-supplied image name. Jira Ticket column is left blank for manual entry.
 - [ ] Vulnerabilities in the report are sorted by severity (critical first, low last).
 - [ ] Project Details, Microservice Release Details, and Security Scan Findings sections are all populated correctly.
 - [ ] The Report Date is auto-populated with the current date at runtime.
@@ -219,9 +220,9 @@ Populate one row per entry in the `vulnerabilities` array, sorted by severity (c
 **Web Application / UI**
 
 - [ ] The web app renders correctly in Chrome, Firefox, and Edge (latest two major versions).
-- [ ] All six input fields are present on the form and are marked as required.
+- [ ] All six input fields are present on the form; Project Name and TPM are labelled as optional.
 - [ ] The Twistlock Token field masks user input.
-- [ ] Submitting the form with any blank field displays an inline validation error and does not call the backend.
+- [ ] Submitting the form with any blank **required** field displays an inline validation error and does not call the backend.
 - [ ] Clicking "Generate Report" disables the button and shows a loading spinner for the duration of the API calls.
 - [ ] On success, the report file is downloaded automatically with the correct filename format.
 - [ ] On error, a descriptive error banner is shown and the form remains editable for correction and resubmission.

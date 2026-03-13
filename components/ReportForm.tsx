@@ -20,8 +20,8 @@ const fieldLabels: Array<{
 	label: string;
 	type?: "text" | "password";
 }> = [
-	{ name: "projectName", label: "Project Name" },
-	{ name: "tpm", label: "TPM" },
+	{ name: "projectName", label: "Project Name (optional)" },
+	{ name: "tpm", label: "TPM (optional)" },
 	{ name: "microserviceName", label: "Microservice Name" },
 	{ name: "imageName", label: "Image Name" },
 	{ name: "imageTag", label: "Image Tag" },

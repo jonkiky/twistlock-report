@@ -135,8 +135,8 @@ Manages form state using **React Hook Form** and **Zod** validation.
 import { z } from "zod";
 
 export const reportFormSchema = z.object({
-  projectName:       z.string().min(1, "Project name is required"),
-  tpm:               z.string().min(1, "TPM name is required"),
+  projectName:       z.string().optional(),
+  tpm:               z.string().optional(),
   microserviceName:  z.string().min(1, "Microservice name is required"),
   imageName:         z.string().min(1, "Image name is required"),
   imageTag:          z.string().min(1, "Image tag is required"),
@@ -195,8 +195,8 @@ Displays a dismissible success or error alert above the form. Accepts `type: "su
 
 ```typescript
 {
-  projectName:      string;
-  tpm:              string;
+  projectName?:     string;   // optional
+  tpm?:             string;   // optional
   microserviceName: string;
   imageName:        string;
   imageTag:         string;
@@ -353,15 +353,17 @@ Open `lib/template.docx` in Word and insert these tags exactly as shown inside t
 
 **Security Scan Findings table (repeating rows):**
 
-Insert the loop tags on the first data row of the vulnerabilities table:
+The first data row of the findings table contains these five cell placeholders. The loop markers cause `docxtemplater` to repeat the row for every vulnerability:
 
-```
-{#vulnerabilities}
-{cve}  |  {severity}  |  {cvss}  |  {packageName}  |  {packageVersion}  |  {fixStatus}  |  {dateIdentified}  |  {description}
-{/vulnerabilities}
-```
+| Cell | Placeholder |
+|---|---|
+| Microservice Name | `{#vulnerabilities}{imageName}` |
+| CVE Identifier | `{cve}` |
+| Severity | `{severity}` |
+| Date Identified | `{dateIdentified}` |
+| Jira Ticket | `{jiraTicket}{/vulnerabilities}` |
 
-The `{#vulnerabilities}` / `{/vulnerabilities}` pair instructs `docxtemplater` to repeat the row for every item in the array.
+> **Note:** The `{#vulnerabilities}` open-loop tag is prepended to the first cell and `{/vulnerabilities}` is appended to the last cell so the entire table row repeats per vulnerability entry.
 
 ### 6.2 Report Structure
 
@@ -391,17 +393,13 @@ The `.docx` file contains three sections, matching the report template:
 
 One row per vulnerability, sorted: critical → high → medium → low.
 
-| Column | Source Field |
+| Column | Source |
 |---|---|
+| Microservice Name | User-supplied `imageName` |
 | CVE Identifier | `.cve` |
 | Severity | `.severity` (capitalized) |
-| CVSS Score | `.cvss` |
-| Package Name | `.packageName` |
-| Package Version | `.packageVersion` |
-| Fix Status | `.status` |
 | Date Identified | `.discovered` (formatted `YYYY-MM-DD`) |
-| Description | `.description` |
-| Reference | `.link` (as hyperlink) |
+| Jira Ticket | *(blank — filled in manually after download)* |
 
 ### 6.3 Severity Sort Order
 
@@ -430,9 +428,11 @@ export async function buildReport(data: ReportInput): Promise<Buffer> {
   const templateContent = fs.readFileSync(templatePath, "binary");
 
   const zip = new PizZip(templateContent);
+  normalizeBrokenTemplatePlaceholders(zip); // repairs Word-split placeholder tags
   const doc = new Docxtemplater(zip, {
     paragraphLoop: true,
     linebreaks: true,
+    nullGetter() { return ""; }, // render missing/optional values as empty string
   });
 
   const sortedVulns = [...(data.scanResult.vulnerabilities ?? [])].sort(
@@ -440,8 +440,8 @@ export async function buildReport(data: ReportInput): Promise<Buffer> {
   );
 
   doc.render({
-    projectName:          data.projectName,
-    tpm:                  data.tpm,
+    projectName:          data.projectName ?? "",
+    tpm:                  data.tpm ?? "",
     reportDate:           formatDate(data.reportDate),
     microserviceName:     data.microserviceName,
     imageName:            data.imageName,
@@ -451,14 +451,11 @@ export async function buildReport(data: ReportInput): Promise<Buffer> {
     distro:               data.scanResult.distro,
     totalVulnerabilities: data.scanResult.vulnerabilitiesCount,
     vulnerabilities: sortedVulns.map((v) => ({
+      imageName:      data.imageName,
       cve:            v.cve,
       severity:       capitalize(v.severity),
-      cvss:           v.cvss,
-      packageName:    v.packageName,
-      packageVersion: v.packageVersion,
-      fixStatus:      v.status,
       dateIdentified: v.discovered?.slice(0, 10) ?? "",
-      description:    v.description,
+      jiraTicket:     "",
     })),
   });
 

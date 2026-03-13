@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const reportFormSchema = z.object({
-	projectName: z.string().min(1, "Project name is required"),
-	tpm: z.string().min(1, "TPM name is required"),
+	projectName: z.string().optional(),
+	tpm: z.string().optional(),
 	microserviceName: z.string().min(1, "Microservice name is required"),
 	imageName: z.string().min(1, "Image name is required"),
 	imageTag: z.string().min(1, "Image tag is required"),
