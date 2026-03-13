@@ -47,7 +47,7 @@ export async function POST(request: Request): Promise<Response> {
 			scanResult,
 		});
 
-		const filename = buildFilename(projectName, imageName, imageTag, now);
+		const filename = buildFilename(projectName ?? "", imageName, imageTag, now);
 		const responseBody = new Uint8Array(reportBuffer);
 
 		return new Response(responseBody, {
