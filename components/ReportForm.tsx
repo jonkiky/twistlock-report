@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 
@@ -22,8 +22,7 @@ const fieldLabels: Array<{
 }> = [
 	{ name: "projectName", label: "Project Name (optional)" },
 	{ name: "tpm", label: "TPM (optional)" },
-	{ name: "microserviceName", label: "Microservice Name" },
-	{ name: "imageName", label: "Image Name" },
+	{ name: "imageName", label: "Respository (imageName)" },
 	{ name: "imageTag", label: "Image Tag" },
 	{ name: "twistlockToken", label: "Twistlock Token", type: "password" },
 ];
@@ -43,6 +42,12 @@ export default function ReportForm() {
 			twistlockToken: "",
 		},
 	});
+
+	// Sync microserviceName with imageName
+	const imageName = form.watch("imageName");
+	useEffect(() => {
+		form.setValue("microserviceName", imageName);
+	}, [imageName, form]);
 
 	async function onSubmit(values: ReportFormValues): Promise<void> {
 		setIsLoading(true);
