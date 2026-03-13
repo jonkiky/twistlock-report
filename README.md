@@ -55,17 +55,6 @@ If you need custom environment variables from your local `.env` file, run Docker
 docker run --name twistlock-report-app --rm -d -p 3000:3000 --env-file .env twistlock-report-app:latest
 ```
 
-## Useful Make Targets
-
-```bash
-make help
-make docker-build
-make docker-run
-make docker-stop
-make docker-rm
-make docker-logs
-make docker-shell
-```
 
 ## Local Development (Without Docker)
 
