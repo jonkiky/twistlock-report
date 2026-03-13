@@ -1,4 +1,4 @@
-import type { RegistrySearchItem, TwistlockScanResult } from "@/types/twistlock";
+import type { RegistrySearchItem, TwistlockScanResult } from "../types/twistlock";
 
 const DEFAULT_BASE_URL = "https://twistlock.nci.nih.gov";
 
@@ -17,8 +17,11 @@ function authHeader(token: string): HeadersInit {
 }
 
 export class TwistlockError extends Error {
-	constructor(public statusCode: number, message: string) {
+	statusCode: number;
+
+	constructor(statusCode: number, message: string) {
 		super(message);
+		this.statusCode = statusCode;
 		this.name = "TwistlockError";
 	}
 }
