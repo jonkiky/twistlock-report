@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Twistlock Report Generator — Project Search Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: #f9fafb;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 48px 16px;
+      color: #111827;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.1), 0 1px 2px rgba(0,0,0,.06);
+      padding: 32px;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+
+    .form-group { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      color: #111827;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    input:focus {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+    input:disabled { background: #f3f4f6; color: #9ca3af; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.15s, opacity 0.15s;
+      width: 100%;
+    }
+    .btn-primary { background: #18181b; color: #fff; }
+    .btn-primary:hover { background: #27272a; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Repo list */
+    .repo-list {
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+
+    .repo-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: #f9fafb;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 0.8rem;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .select-all-toggle {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      color: #2563eb;
+      background: none;
+      border: none;
+      font-weight: 500;
+    }
+    .select-all-toggle:hover { text-decoration: underline; }
+
+    .repo-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      gap: 12px;
+      transition: background 0.1s;
+    }
+    .repo-row:last-child { border-bottom: none; }
+    .repo-row:hover { background: #fafbfc; }
+    .repo-row.unchecked { opacity: 0.5; }
+
+    .repo-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #18181b;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .repo-name {
+      flex: 1;
+      font-size: 0.875rem;
+      font-weight: 500;
+      font-family: "SF Mono", "Fira Code", Menlo, monospace;
+      color: #111827;
+    }
+
+    .tag-select {
+      padding: 6px 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      color: #374151;
+      background: #fff;
+      cursor: pointer;
+      min-width: 120px;
+    }
+    .tag-select:focus {
+      border-color: #2563eb;
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+    }
+
+    /* Phase transition */
+    .phase { display: none; }
+    .phase.active { display: block; }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.8rem;
+      color: #6b7280;
+      text-decoration: none;
+      margin-bottom: 16px;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+    .back-link:hover { color: #111827; }
+
+    /* Banner */
+    .banner {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      margin-bottom: 16px;
+      display: none;
+    }
+    .banner.show { display: flex; align-items: center; gap: 8px; }
+    .banner.success { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .banner.error   { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .banner.info    { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+
+    .banner-dismiss {
+      margin-left: auto;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.1rem;
+      color: inherit;
+      opacity: 0.6;
+    }
+    .banner-dismiss:hover { opacity: 1; }
+
+    /* Spinner */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Progress */
+    .progress-bar {
+      height: 4px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      display: none;
+    }
+    .progress-bar.show { display: block; }
+    .progress-fill {
+      height: 100%;
+      background: #18181b;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      color: #6b7280;
+      margin-bottom: 20px;
+    }
+
+    .result-count {
+      font-size: 0.8rem;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+
+    .demo-badge {
+      display: inline-block;
+      background: #fef3c7;
+      color: #92400e;
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 999px;
+      margin-left: 8px;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Container Scan Report Generator <span class="demo-badge">UI DEMO</span></h1>
+
+  <!-- Banner -->
+  <div id="banner" class="banner">
+    <span id="banner-icon"></span>
+    <span id="banner-msg"></span>
+    <button class="banner-dismiss" onclick="hideBanner()">&times;</button>
+  </div>
+
+  <!-- Phase 1: Search -->
+  <div id="phase-search" class="phase active">
+    <p class="subtitle">Enter a project name to discover repositories and generate scan reports.</p>
+
+    <div class="form-group">
+      <label for="projectName">Project Name</label>
+      <input type="text" id="projectName" placeholder="e.g. C3DC, CCDI, ICDC" />
+    </div>
+    <div class="form-group">
+      <label for="tpm">TPM (optional)</label>
+      <input type="text" id="tpm" placeholder="e.g. John Doe" />
+    </div>
+    <div class="form-group">
+      <label for="token">Twistlock Token</label>
+      <input type="password" id="token" placeholder="Paste your Twistlock Bearer token" />
+    </div>
+
+    <button class="btn btn-primary" id="searchBtn" onclick="doSearch()">
+      Search Repositories
+    </button>
+  </div>
+
+  <!-- Phase 2: Select & Generate -->
+  <div id="phase-select" class="phase">
+    <button class="back-link" onclick="goBack()">&#8592; Back to Search</button>
+
+    <p class="result-count" id="resultCount"></p>
+
+    <div class="repo-list" id="repoList">
+      <div class="repo-header">
+        <span>Repository</span>
+        <button class="select-all-toggle" id="toggleAllBtn" onclick="toggleAll()">Deselect All</button>
+      </div>
+      <div id="repoRows"></div>
+    </div>
+
+    <div class="progress-bar" id="progressBar">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+
+    <button class="btn btn-primary" id="generateBtn" onclick="doGenerate()">
+      Generate Reports
+    </button>
+  </div>
+</div>
+
+<script>
+  // ── Mock data (simulates Twistlock search results) ──
+  var MOCK_DATA = {
+    "c3dc": [
+      { repo: "c3dc-backend-api",   tags: ["2.4.1", "2.4.0", "2.3.8"] },
+      { repo: "c3dc-frontend",      tags: ["3.1.0", "3.0.2", "3.0.1"] },
+      { repo: "c3dc-data-loader",   tags: ["1.7.3", "1.7.2"] },
+      { repo: "c3dc-auth-service",  tags: ["1.2.0", "1.1.5", "1.1.4"] }
+    ],
+    "ccdi": [
+      { repo: "ccdi-federation-dcc", tags: ["1.2.0.10", "1.2.0.9", "1.2.0.8"] },
+      { repo: "ccdi-hub-backend",    tags: ["2.1.0", "2.0.5", "2.0.4"] },
+      { repo: "ccdi-hub-frontend",   tags: ["3.0.1", "3.0.0"] },
+      { repo: "ccdi-data-service",   tags: ["1.5.2", "1.5.1", "1.5.0"] },
+      { repo: "ccdi-file-manifest",  tags: ["1.0.3"] }
+    ],
+    "icdc": [
+      { repo: "icdc-backend",        tags: ["4.2.0", "4.1.9", "4.1.8"] },
+      { repo: "icdc-frontend",       tags: ["4.2.0", "4.1.9"] },
+      { repo: "icdc-files-service",  tags: ["2.0.1", "2.0.0"] }
+    ]
+  };
+
+  // ── State ──
+  var selections = [];
+
+  // ── Banner helpers ──
+  function showBanner(type, msg) {
+    var el = document.getElementById("banner");
+    var iconEl = document.getElementById("banner-icon");
+    var msgEl = document.getElementById("banner-msg");
+    el.className = "banner show " + type;
+    iconEl.textContent = type === "success" ? "\u2713" : type === "error" ? "\u2717" : "\u2139";
+    msgEl.textContent = msg;
+  }
+  function hideBanner() {
+    document.getElementById("banner").className = "banner";
+  }
+
+  // ── Phase navigation ──
+  function showPhase(name) {
+    var phases = document.querySelectorAll(".phase");
+    for (var i = 0; i < phases.length; i++) phases[i].classList.remove("active");
+    document.getElementById("phase-" + name).classList.add("active");
+  }
+  function goBack() {
+    hideBanner();
+    showPhase("search");
+    document.getElementById("progressBar").classList.remove("show");
+  }
+
+  // ── Phase 1: Search ──
+  function doSearch() {
+    var project = document.getElementById("projectName").value.trim();
+    var token = document.getElementById("token").value.trim();
+    hideBanner();
+
+    if (!project) { showBanner("error", "Project name is required."); return; }
+    if (!token)   { showBanner("error", "Twistlock token is required."); return; }
+
+    var btn = document.getElementById("searchBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Searching\u2026';
+
+    setTimeout(function() {
+      btn.disabled = false;
+      btn.innerHTML = "Search Repositories";
+
+      var key = project.toLowerCase();
+      var data = MOCK_DATA[key];
+
+      if (!data) {
+        showBanner("error", 'No repositories found for project "' + project + '". Try: C3DC, CCDI, or ICDC.');
+        return;
+      }
+
+      selections = data.map(function(item) {
+        return {
+          repo: item.repo,
+          availableTags: item.tags,
+          selectedTag: item.tags[0],
+          checked: true
+        };
+      });
+
+      renderRepoList();
+      showPhase("select");
+      showBanner("info", "Found " + selections.length + ' repositories for "' + project.toUpperCase() + '".');
+    }, 1200);
+  }
+
+  // ── Phase 2: Repo list ──
+  function renderRepoList() {
+    var container = document.getElementById("repoRows");
+    container.innerHTML = "";
+
+    for (var i = 0; i < selections.length; i++) {
+      (function(idx) {
+        var sel = selections[idx];
+        var row = document.createElement("div");
+        row.className = "repo-row" + (sel.checked ? "" : " unchecked");
+        row.id = "repo-row-" + idx;
+
+        var cb = document.createElement("input");
+        cb.type = "checkbox";
+        cb.checked = sel.checked;
+        cb.onchange = function() { toggleRepo(idx); };
+
+        var name = document.createElement("span");
+        name.className = "repo-name";
+        name.textContent = sel.repo;
+
+        var select = document.createElement("select");
+        select.className = "tag-select";
+        for (var j = 0; j < sel.availableTags.length; j++) {
+          var opt = document.createElement("option");
+          opt.value = sel.availableTags[j];
+          opt.textContent = sel.availableTags[j];
+          if (sel.availableTags[j] === sel.selectedTag) opt.selected = true;
+          select.appendChild(opt);
+        }
+        select.onchange = function(e) { selections[idx].selectedTag = e.target.value; };
+
+        row.appendChild(cb);
+        row.appendChild(name);
+        row.appendChild(select);
+        container.appendChild(row);
+      })(i);
+    }
+
+    updateGenerateBtn();
+    updateToggleAllBtn();
+  }
+
+  function toggleRepo(idx) {
+    selections[idx].checked = !selections[idx].checked;
+    var row = document.getElementById("repo-row-" + idx);
+    row.className = "repo-row" + (selections[idx].checked ? "" : " unchecked");
+    updateGenerateBtn();
+    updateToggleAllBtn();
+  }
+
+  function toggleAll() {
+    var allChecked = selections.every(function(s) { return s.checked; });
+    for (var i = 0; i < selections.length; i++) selections[i].checked = !allChecked;
+    renderRepoList();
+  }
+
+  function updateToggleAllBtn() {
+    var btn = document.getElementById("toggleAllBtn");
+    var allChecked = selections.every(function(s) { return s.checked; });
+    btn.textContent = allChecked ? "Deselect All" : "Select All";
+  }
+
+  function updateGenerateBtn() {
+    var count = selections.filter(function(s) { return s.checked; }).length;
+    var btn = document.getElementById("generateBtn");
+    btn.textContent = count > 0 ? "Generate Reports (" + count + ")" : "Generate Reports";
+    btn.disabled = count === 0;
+
+    document.getElementById("resultCount").textContent =
+      count + " of " + selections.length + " repositories selected";
+  }
+
+  // ── Phase 2: Generate (simulated) ──
+  function doGenerate() {
+    var selected = selections.filter(function(s) { return s.checked; });
+    if (selected.length === 0) return;
+
+    hideBanner();
+
+    var btn = document.getElementById("generateBtn");
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Generating\u2026';
+
+    var bar = document.getElementById("progressBar");
+    var fill = document.getElementById("progressFill");
+    bar.classList.add("show");
+    fill.style.width = "0%";
+
+    var completed = 0;
+
+    function generateNext() {
+      if (completed >= selected.length) {
+        btn.disabled = false;
+        btn.textContent = "Generate Reports (" + selected.length + ")";
+        bar.classList.remove("show");
+
+        var names = selected.map(function(s) { return s.repo + ":" + s.selectedTag; }).join(", ");
+        showBanner("success",
+          "Successfully generated " + selected.length + " report" +
+          (selected.length > 1 ? "s" : "") + ": " + names
+        );
+        return;
+      }
+
+      setTimeout(function() {
+        completed++;
+        fill.style.width = Math.round((completed / selected.length) * 100) + "%";
+        generateNext();
+      }, 600 + Math.random() * 400);
+    }
+
+    generateNext();
+  }
+</script>
+
+</body>
+</html>
